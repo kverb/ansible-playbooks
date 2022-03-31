@@ -1,0 +1,9 @@
+---
+- name: Update Arch systems
+  hosts: arch
+  # equivalent of pacman -Syu
+  tasks:
+    - community.general.pacman:  
+      # executable: yay
+        update_cache: yes
+        upgrade: yes

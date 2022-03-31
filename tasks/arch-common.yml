@@ -1,0 +1,10 @@
+---
+- name: Install commonly-needed packages from official repo
+  community.general.pacman:
+    name:
+      - fish
+      - go
+      - git
+      - vim
+    state: present
+

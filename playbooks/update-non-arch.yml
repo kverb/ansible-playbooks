@@ -1,0 +1,5 @@
+---
+- name: Update non-arch systems
+  hosts: dnf  # TODO: include debian systems here after grokking proxmox repo
+  roles:
+    - role: budimanjojo.update

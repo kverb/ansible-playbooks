@@ -1,0 +1,77 @@
+---
+- name: spin up an nzbget container, on an arch linux install
+  hosts: arch
+  pre_tasks:
+    - import_tasks: '../tasks/arch-common.yml'
+  roles:
+    - role: jonsible.yay
+      aur_user: yay
+  roles:
+    - role: r_pufky.nzbget
+      vars:
+        nzbget_main_dir: '/data/nzbget'
+        nzbget_web_dir: '${AppDir}/webui'
+        nzbget_scripts_dir: '${AppDir}/scripts'
+        nzbget_config_template: '${AppDir}/webui/nzbget.conf.template'
+        nzbget_dest_dir: '/nfs/media/downloads'
+        nzbget_user: root
+        nzbget_group: root
+        nzbget_cert_check: 'yes'
+        nzbget_cert_store: '/nfs/media/cacert.pem'
+        nzbget_news_servers:
+          - id: 1
+            active:      'yes'
+            name:        'Newsgroup Ninja'
+            level:       0
+            optional:    'no'
+            group:       0
+            srv_host:    'news-us.newsgroup.ninja'
+            srv_port:    563
+            username:    '{{ newsgroup_ninja_username }}'
+            password:    '{{ newsgroup_ninja_password }}'
+            join_group:  'no'
+            encryption:  'yes'
+            cipher:      ''
+            connections: 64
+            retention:   0
+            ip_version:  'auto'
+            notes:       ''
+          - id: 2
+            active:      'yes'
+            name:        'tweaknews'
+            level:       0
+            optional:    'no'
+            group:       0
+            srv_host:    'news.tweaknews.eu'
+            srv_port:    563
+            username:    '{{ tweaknews_username }}'
+            password:    '{{ tweaknews_password }}'
+            join_group:  'no'
+            encryption:  'yes'
+            cipher:      ''
+            connections: 64
+            retention:   0
+            ip_version:  'auto'
+            notes:       ''
+        nzbget_categories:
+          - id: 1
+            name:       'Movies'
+            dest_dir:   ''
+            unpack:     'yes'
+            extensions: ''
+            aliases:    ''
+          - id: 2
+            name:       'Series'
+            dest_dir:   ''
+            unpack:     'yes'
+            extensions: ''
+            aliases:    ''
+  post_tasks:
+    - name: Enable service nzbget
+      ansible.builtin.systemd:
+        name: nzbget
+        enabled: yes
+    - name: Make sure it starts
+      ansible.builtin.systemd:
+        name: nzbget
+        state: started

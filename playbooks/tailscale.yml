@@ -1,0 +1,16 @@
+---
+- name: Install + Enable tailscale
+  hosts: tailscale:!exit  # exclude exit node, since we want v1.18 pinned
+  roles:
+    - role: artis3n.tailscale 
+      vars:
+        tailscale_up_skip: true
+
+- name: downgrade/keep exit node to v1.18
+  hosts: exit
+  tasks:
+    - name: Prevent installed tailscale from being updated
+      community.general.dnf_versionlock:
+        name: tailscale-1.18
+        state: present
+

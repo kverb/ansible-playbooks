@@ -1,0 +1,5 @@
+---
+- name: Install Yay
+  roles:
+    - role: jahrik.yay
+      install: true
