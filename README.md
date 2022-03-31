@@ -20,6 +20,7 @@ These are all installed on base arch linux LXC containers, within proxmox. While
 - you'll need to enable the latest mirrorlist from [here](https://archlinux.org/mirrorlist/all/https/) (uncomment the US section at the bottom) and copy it to `/etc/pacman.d/mirrorlist`
 - then:
 ```
+trust extract-compat  # see https://archlinux.org/news/ca-certificates-update/ for why
 pacman-key --populate archlinux
 pacman -Syy --noconfirm archlinux-keyring
 ```
