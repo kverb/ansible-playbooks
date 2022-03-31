@@ -27,9 +27,9 @@ pacman -Syy --noconfirm archlinux-keyring
 - then you can update the system packages with `pacman -Syyu --noconfirm`
 - install python (required for ansible): `pacman -S python`
 
- Now you can run ansible via ssh, but be sure to include the new container in your ansible inventory.
+ Now you can run ansible via ssh, but be sure to include any new containers in your ansible inventory.
 
- These containers are part of an NFS-based file sharing system. They are currently configured with bindmounts to directories prefixed with /nfs in each container. It's not a requirement that the binding is actually an nfs share; just that the mount is actually somwhere useful to you.
+ These containers are part of an NFS-based file sharing system. They are currently configured with bindmounts to directories prefixed with /nfs in each container. It's not a requirement that the binding is actually an nfs share; just that the mount is actually somwhere useful to you and the mount is at /nfs
 
 ### ansible 
 
@@ -55,7 +55,7 @@ newsgroup_ninja_password: supersecretpassword
 tweaknews_username: flynn 
 tweaknews_password: othersecretpassword
 
-ansible-vault encrypt nzbget.secrets
+$ ansible-vault encrypt nzbget.secrets
 ```
 The encrypt step will prompt for a password to encrypt the file with. You will be prompted to enter this when decrypting.
 
