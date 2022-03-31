@@ -1,0 +1,10 @@
+exclude_paths:
+    - .cache/
+    - .github/
+    - .idea/
+    - .vscode/
+    - ../../../../../.ansible/
+
+skip_list:
+    - line-length
+    - package-latest

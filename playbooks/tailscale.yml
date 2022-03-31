@@ -6,6 +6,14 @@
       vars:
         tailscale_up_skip: true
 
+  tasks:
+    - name: restart if we say so
+      ansible.builtin.service:
+        name: tailscaled
+        state: restarted
+        enabled: yes
+      when: restart_service
+
 - name: downgrade/keep exit node to v1.18
   hosts: exit
   tasks:
