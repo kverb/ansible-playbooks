@@ -6,18 +6,26 @@
   roles:
     - role: jonsible.yay
       aur_user: yay
-  roles:
     - role: r_pufky.nzbget
       vars:
         nzbget_main_dir: '/data/nzbget'
         nzbget_web_dir: '${AppDir}/webui'
         nzbget_scripts_dir: '${AppDir}/scripts'
         nzbget_config_template: '${AppDir}/webui/nzbget.conf.template'
-        nzbget_dest_dir: '/nfs/media/downloads'
+        nzbget_dest_dir: '/nfs/media/downloads'  # bind-mounted to nfs
+        nzbget_inter_dir: '/mnt/data/inter'      # bind-mounted to extra storage from host
+        nzbget_temp_dir: '/mnt/data/tmp'
+        # the system user that runs nzb
         nzbget_user: root
         nzbget_group: root
+        # the app/api/login user within nzb
+        nzbget_control_username:    ''
+        nzbget_control_password:    ''
+        nzbget_control_port: '80' # http port
         nzbget_cert_check: 'yes'
         nzbget_cert_store: '/nfs/media/cacert.pem'
+        nzbget_unrar_cmd: '${AppDir}/unrar'
+        nzbget_seven_zip_cmd: '${AppDir}/7z'
         nzbget_news_servers:
           - id: 1
             active:      'yes'
