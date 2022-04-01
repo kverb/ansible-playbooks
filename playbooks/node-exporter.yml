@@ -1,0 +1,8 @@
+---
+- name: Install prometheus node_exporter on all containers
+  hosts: monitored
+  vars:
+    prometheus_components:
+      - node_exporter
+  roles:
+    - mesaguy.prometheus
