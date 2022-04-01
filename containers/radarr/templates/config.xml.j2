@@ -1,0 +1,16 @@
+<Config>
+  <Port>{{ radarr_port | default('7878') }}</Port>
+  <BindAddress>{{ radarr_bind_address }}</BindAddress>
+  <SslPort>{{ radarr_ssl_port | default('9898') }}</SslPort>
+  <EnableSsl>{{ radarr_enable_ssl }}</EnableSsl>
+  <ApiKey>{{ radarr_api_key }}</ApiKey>
+  <AuthenticationMethod>{{ radarr_authentication_method }}</AuthenticationMethod>
+  <LogLevel>{{ radarr_log_level }}</LogLevel>
+  <LaunchBrowser>{{ radarr_launch_browser }}</LaunchBrowser>
+  <Branch>{{ radarr_branch }}</Branch>
+  <SslCertHash>{{ radarr_ssl_cert_hash }}</SslCertHash>
+  <UpdateMechanism>{{ radarr_update_mechanism }}</UpdateMechanism>
+  <AnalyticsEnabled>{{ radarr_analytics_enabled }}</AnalyticsEnabled>
+  <UpdateAutomatically>{{ radarr_update_automatically }}</UpdateAutomatically>
+  <UrlBase>{{ radarr_url_base }}</UrlBase>
+</Config>

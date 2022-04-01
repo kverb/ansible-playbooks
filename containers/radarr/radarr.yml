@@ -1,0 +1,162 @@
+---
+- name: spin up a radarr container, on an arch linux install
+  vars:
+    # These vars are mostly for populating the radarr config template
+    radarr_port: 80
+    radarr_bind_address: '0.0.0.0'
+    radarr_enable_ssl: false
+    radarr_api_key: ''
+    radarr_authentication_method: 'None'
+    radarr_log_level: 'info'
+    radarr_launch_browser: false # Default: undefined
+    radarr_branch: 'master'
+    radarr_ssl_cert_hash: ''
+    radarr_update_mechanism: 'BuiltIn'
+    radarr_analytics_enabled: false # Default: undefined
+    radarr_update_automatically: true # Default: undefined
+    radarr_url_base: ''
+    radarr_user: 'root'
+    radarr_group: 'root'
+
+    radarr_create_user: false
+    # Generic architecture for platform: x64, arm, arm64
+    radarr_arch_generic: 'x64'
+    # C architecture for platform: linux, linuxmusl
+    radarr_arch_c: 'linux'
+    # Installation directory
+    radarr_dir: '/var/lib/radarr'
+
+    nzbget_ip: '192.168.141.123'
+
+  hosts: radarr
+  pre_tasks:
+    - import_tasks: '../../tasks/arch-common.yml'
+    - import_tasks: '../../tasks/tz.yml'
+    - name: reg db_touched
+      ansible.builtin.stat:
+        path: /var/lib/radarr/db_touched
+      register: db_touched
+
+  roles:
+    - role: jonsible.yay
+      aur_user: yay
+
+  tasks:
+    - name: Install radarr
+      kewlfft.aur.aur:
+        use: yay
+        name: radarr
+    - name: 'install | set configuration'
+      ansible.builtin.template:
+        src: 'config.xml.j2'
+        dest: '{{ radarr_dir }}/config.xml'
+        owner: '{{ radarr_user }}'
+        group: '{{ radarr_group }}'
+        mode: 0600 # 0664 originally
+      # TODO figure out how to restart only on updates to this file
+      # notify: 'restart radarr'
+    - name: chown radarr directories
+      ansible.builtin.file:
+        path: /var/lib/radarr
+        state: directory
+        recurse: yes
+        owner: '{{ radarr_user }}'
+        group: '{{ radarr_group }}'
+    - name: copy indexers.csv file
+      ansible.builtin.template:
+        src: 'indexers.csv.j2'
+        dest: '{{ radarr_dir }}/indexers.csv'
+        owner: '{{ radarr_user }}'
+        group: '{{ radarr_group }}'
+        mode: '0644'
+    - name: copy download_clients.csv file
+      ansible.builtin.template:
+        src: 'download_clients.csv.j2'
+        dest: '{{ radarr_dir }}/download_clients.csv'
+        owner: '{{ radarr_user }}'
+        group: '{{ radarr_group }}'
+        mode: '0644'
+    - name: create radarr systemd dir
+      ansible.builtin.file:
+        path: /etc/systemd/system/radarr.service.d
+        state: directory
+        mode: '0755'
+    - name: 'edit radarr systemd unit file'
+      ansible.builtin.template:
+        src: 'radarr.override.conf.j2'
+        dest: '/etc/systemd/system/radarr.service.d/override.conf'
+        owner: 'root'
+        group: 'root'
+        mode: 0644
+      notify:
+        - 'reload systemd'
+
+  post_tasks:
+    - name: Enable service radarr
+      ansible.builtin.systemd:
+        name: radarr
+        state: started
+        enabled: true
+        masked: false
+    - name: 'wait for radarr.db to exist (sleep 6)'
+      # there's probably a much better way to do this
+      ansible.builtin.command: 'sleep 6'
+    # populate radarr's sqlite3 db with our indexer settings
+    # this should probably be a custom script
+    - name: tmp stop radarr
+      ansible.builtin.systemd:
+        name: radarr
+        state: stopped
+    # Radarr doesn't have a sane, simple config file for some of the
+    # important and sometimes cumbersome to remember/add settings.
+    # Instead, they are stored in the single radarr.db sqlite3 db.
+    # So this attempts to insert those configuration rows into the DB.
+    # They were generated from a CSV export
+    - name: insert DB configs
+      ansible.builtin.command:
+        chdir: /var/lib/radarr
+        # well this is just .. holy hell
+        argv:
+          - sqlite3
+          - radarr.db
+          # populate indexers table
+          - 'DROP TABLE IF EXISTS "Indexers;"'
+          - 'CREATE TABLE IF NOT EXISTS "Indexers" ("Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "Name" TEXT NOT NULL, "Implementation" TEXT NOT NULL, "Settings" TEXT, "ConfigContract" TEXT, "EnableRss" INTEGER, "EnableAutomaticSearch" INTEGER, "EnableInteractiveSearch" INTEGER NOT NULL, "Priority" INTEGER NOT NULL DEFAULT 25, "Tags" TEXT, "DownloadClientId" INTEGER NOT NULL DEFAULT 0);'
+          # can't import CSV into a key with an autoincrement primary key
+          - 'CREATE TABLE IF NOT EXISTS "IndexersTmp" ("Name" TEXT NOT NULL, "Implementation" TEXT NOT NULL, "Settings" TEXT, "ConfigContract" TEXT, "EnableRss" INTEGER, "EnableAutomaticSearch" INTEGER, "EnableInteractiveSearch" INTEGER NOT NULL, "Priority" INTEGER NOT NULL DEFAULT 25, "Tags" TEXT, "DownloadClientId" INTEGER NOT NULL DEFAULT 0);'
+          - 'CREATE UNIQUE INDEX IF NOT EXISTS "IX_Indexers_Name" ON "Indexers" ("Name" ASC);'
+          - '.mode csv'
+          - '.import indexers.csv IndexersTmp'
+          - 'INSERT INTO Indexers("Name", "Implementation", "Settings", "ConfigContract", "EnableRss", "EnableAutomaticSearch", "EnableInteractiveSearch", "Priority", "Tags", "DownloadClientId") select * from IndexersTmp;'
+          - "INSERT INTO sqlite_sequence(rowid,name,seq) VALUES(5,'Indexers',4);"
+          - 'DROP TABLE IndexersTmp;'
+          # populate download clients table
+          - 'DROP TABLE IF EXISTS "DownloadClients";'
+          - 'CREATE TABLE if NOT EXISTS "DownloadClients" ("Id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "Enable" INTEGER NOT NULL, "Name" TEXT NOT NULL, "Implementation" TEXT NOT NULL, "Settings" TEXT NOT NULL, "ConfigContract" TEXT NOT NULL, "Priority" INTEGER NOT NULL DEFAULT 1, "RemoveCompletedDownloads" INTEGER NOT NULL DEFAULT 1, "RemoveFailedDownloads" INTEGER NOT NULL DEFAULT 1);'
+          - 'CREATE TABLE if NOT EXISTS "DownloadClientsTmp" ("Enable" INTEGER NOT NULL, "Name" TEXT NOT NULL, "Implementation" TEXT NOT NULL, "Settings" TEXT NOT NULL, "ConfigContract" TEXT NOT NULL, "Priority" INTEGER NOT NULL DEFAULT 1, "RemoveCompletedDownloads" INTEGER NOT NULL DEFAULT 1, "RemoveFailedDownloads" INTEGER NOT NULL DEFAULT 1);'
+          - '.mode csv'
+          - '.import download_clients.csv DownloadClientsTmp'
+          - 'INSERT INTO DownloadClients("Enable", "Name", "Implementation", "Settings", "ConfigContract", "Priority", "RemoveCompletedDownloads", "RemoveFailedDownloads") select * from DownloadClientsTmp;'
+          - "INSERT INTO sqlite_sequence(rowid,name,seq) VALUES(10,'DownloadClients',1);"
+          - 'DROP TABLE DownloadClientsTmp;'
+
+      when: db_touched.stat.exists == false
+      notify:
+        - touch db
+        - restart radarr
+
+  handlers:
+    - name: reload systemd
+      ansible.builtin.systemd:
+        daemon-reload: true
+    - name: restart radarr
+      ansible.builtin.systemd:
+        name: radarr
+        enabled: true
+        state: restarted
+
+    - name: touch db
+      ansible.builtin.file:
+        path: /var/lib/radarr/db_touched
+        state: touch
+        mode: '0666'
