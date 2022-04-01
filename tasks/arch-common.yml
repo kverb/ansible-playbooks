@@ -6,5 +6,4 @@
       - go
       - git
       - vim
-    state: present
-
+    state: latest

@@ -1,0 +1,6 @@
+---
+- name: set timezone
+  vars:
+    timezone: 'America/New_York'
+  community.general.timezone:
+    name: '{{ timezone }}'
