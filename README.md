@@ -61,3 +61,16 @@ $ ansible-vault encrypt nzbget.secrets
 The encrypt step will prompt for a password to encrypt the file with. You will be prompted to enter this when decrypting.
 
 `ansible-playbook containers/nzbget.yml --limit <nzbget-host-from-inventory> -e @secrets/nzbget.secrets --ask-vault-pass`
+
+
+### radarr
+
+Installs radarr, and adds the indexer and nzbget client configuration.
+
+TODO: profiles, custom formats and quality
+
+Like the nzbget secrets, update the plaintext file, and encrypt `secrets/radarr.secrets` using `ansible-vault`.
+Then run the playbook:
+
+`ansible-playbook containers/nzbget.yml -e @secrets/nzbget.secrets --ask-vault-pass`
+
