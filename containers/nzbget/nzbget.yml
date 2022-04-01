@@ -78,8 +78,5 @@
     - name: Enable service nzbget
       ansible.builtin.systemd:
         name: nzbget
-        enabled: yes
-    - name: Make sure it starts
-      ansible.builtin.systemd:
-        name: nzbget
         state: started
+        enabled: yes
