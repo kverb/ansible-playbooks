@@ -2,9 +2,17 @@
 - name: Install commonly-needed packages from official repo
   community.general.pacman:
     name:
+      - dog
+      - duf
+      - dust
       - fish
       - go
+      - gotop
       - git
       - net-tools
+      - procs
+      - ranger
       - vim
+      - xh
+      - zoxide
     state: latest
